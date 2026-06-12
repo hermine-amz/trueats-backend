@@ -35,6 +35,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Manager only routes
     Route::middleware('role:gerant')->group(function () {
+        Route::post('/restaurants', [RestaurantController::class, 'store']);
         Route::put('/restaurants/{id}', [RestaurantController::class, 'update']);
         Route::post('/plats', [PlatController::class, 'store']);
         Route::put('/plats/{id}', [PlatController::class, 'update']);

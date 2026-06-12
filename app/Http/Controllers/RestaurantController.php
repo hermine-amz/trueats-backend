@@ -86,6 +86,64 @@ class RestaurantController extends Controller
         ]);
     }
 
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'nom' => 'required|string|max:255',
+            'adresse' => 'required|string|max:255',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+            'qr_code_identifier' => 'required|string|unique:restaurants,qr_code_identifier',
+            'superficie' => 'required|integer|min:10',
+        ]);
+
+        // 1. Exact match check
+        $exactMatch = Restaurant::where('latitude', $validated['latitude'])
+            ->where('longitude', $validated['longitude'])
+            ->exists();
+
+        if ($exactMatch) {
+            return response()->json([
+                'message' => 'A restaurant already exists at these exact GPS coordinates.'
+            ], 422);
+        }
+
+        // 2. Proximity check for same name
+        $potentialDuplicates = Restaurant::where('nom', $validated['nom'])->get();
+
+        foreach ($potentialDuplicates as $existing) {
+            $distance = $this->calculateDistance(
+                $validated['latitude'],
+                $validated['longitude'],
+                $existing->latitude,
+                $existing->longitude
+            );
+
+            if ($distance < 50) {
+                return response()->json([
+                    'message' => 'A restaurant with the same name already exists in this location (less than 50 meters away).'
+                ], 422);
+            }
+        }
+
+        // 3. Create the restaurant
+        $restaurant = Restaurant::create([
+            'nom' => $validated['nom'],
+            'adresse' => $validated['adresse'],
+            'latitude' => $validated['latitude'],
+            'longitude' => $validated['longitude'],
+            'qr_code_identifier' => $validated['qr_code_identifier'],
+            'superficie' => $validated['superficie'],
+            'gerant_id' => $request->user()->id,
+            'est_valide' => false, // Default to false for administrator validation
+        ]);
+
+        return response()->json([
+            'message' => 'Restaurant registered successfully. Pending administrator validation.',
+            'restaurant' => $restaurant
+        ], 201);
+    }
+
     private function calculateDistance($lat1, $lon1, $lat2, $lon2)
     {
         $earthRadius = 6371000;

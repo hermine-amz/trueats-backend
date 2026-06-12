@@ -476,4 +476,66 @@ class TrueatsApiTest extends TestCase
         ]);
         $response->assertStatus(422);
     }
+
+    public function test_public_cannot_register_as_admin()
+    {
+        $response = $this->postJson('/api/register', [
+            'nom' => 'Hacker',
+            'prenom' => 'Admin',
+            'email' => 'hacked.admin@example.com',
+            'password' => 'password123',
+            'role' => 'admin'
+        ]);
+
+        $response->assertStatus(422);
+    }
+
+    public function test_manager_cannot_create_duplicate_restaurant()
+    {
+        $this->actingAs($this->gerant);
+
+        // 1. Create a base restaurant
+        $response = $this->postJson('/api/restaurants', [
+            'nom' => 'Chez Jean',
+            'adresse' => 'Cotonou',
+            'latitude' => 6.3676,
+            'longitude' => 2.4253,
+            'qr_code_identifier' => 'CHEZ_JEAN_QR_1',
+            'superficie' => 80
+        ]);
+        $response->assertStatus(201);
+
+        // 2. Exact coordinates duplicate
+        $response = $this->postJson('/api/restaurants', [
+            'nom' => 'Chez Marie',
+            'adresse' => 'Cotonou',
+            'latitude' => 6.3676,
+            'longitude' => 2.4253,
+            'qr_code_identifier' => 'CHEZ_MARIE_QR',
+            'superficie' => 100
+        ]);
+        $response->assertStatus(422);
+
+        // 3. Proximity name duplicate (~22m offset)
+        $response = $this->postJson('/api/restaurants', [
+            'nom' => 'Chez Jean', // same name
+            'adresse' => 'Cotonou Bis',
+            'latitude' => 6.3676 + 0.0002, // ~22m away
+            'longitude' => 2.4253,
+            'qr_code_identifier' => 'CHEZ_JEAN_QR_2',
+            'superficie' => 80
+        ]);
+        $response->assertStatus(422);
+
+        // 4. Same name but far away (~110m offset)
+        $response = $this->postJson('/api/restaurants', [
+            'nom' => 'Chez Jean', // same name
+            'adresse' => 'Cotonou Loin',
+            'latitude' => 6.3676 + 0.001, // ~110m away
+            'longitude' => 2.4253,
+            'qr_code_identifier' => 'CHEZ_JEAN_QR_3',
+            'superficie' => 80
+        ]);
+        $response->assertStatus(201);
+    }
 }
