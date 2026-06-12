@@ -32,7 +32,7 @@ class RestaurantController extends Controller
             $restaurant->longitude
         );
 
-        $inPerimeter = $distance <= 50;
+        $inPerimeter = $distance <= $restaurant->rayon_validation;
 
         return response()->json([
             'in_perimeter' => $inPerimeter,

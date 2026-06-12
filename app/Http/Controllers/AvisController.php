@@ -28,7 +28,7 @@ class AvisController extends Controller
             $restaurant->longitude
         );
 
-        if ($distance > 50) {
+        if ($distance > $restaurant->rayon_validation) {
             return response()->json([
                 'message' => 'Vous devez être dans le restaurant'
             ], 403);

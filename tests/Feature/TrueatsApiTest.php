@@ -190,4 +190,36 @@ class TrueatsApiTest extends TestCase
         $indexResponse->assertStatus(200)
             ->assertJsonCount(1);
     }
+
+    public function test_custom_superficie_validation_radius()
+    {
+        $this->actingAs($this->user);
+
+        // 1. Small restaurant (50 m2) -> Radius = sqrt(50/pi) + 15 = 4 + 15 = 19 meters
+        $this->restaurant->update(['superficie' => 50]);
+        $this->assertEquals(19, $this->restaurant->fresh()->rayon_validation);
+
+        // Latitude offset of 0.0002 ~ 22.2 meters away
+        $response = $this->postJson("/api/restaurants/{$this->restaurant->id}/verify-gps", [
+            'latitude' => $this->restaurant->latitude + 0.0002,
+            'longitude' => $this->restaurant->longitude
+        ]);
+
+        // Should be out of perimeter (radius 19m < 22.2m distance)
+        $response->assertStatus(200)
+            ->assertJson(['in_perimeter' => false]);
+
+        // 2. Large restaurant (500 m2) -> Radius = sqrt(500/pi) + 15 = 13 + 15 = 28 meters
+        $this->restaurant->update(['superficie' => 500]);
+        $this->assertEquals(28, $this->restaurant->fresh()->rayon_validation);
+
+        $response = $this->postJson("/api/restaurants/{$this->restaurant->id}/verify-gps", [
+            'latitude' => $this->restaurant->latitude + 0.0002,
+            'longitude' => $this->restaurant->longitude
+        ]);
+
+        // Should be in perimeter (radius 28m > 22.2m distance)
+        $response->assertStatus(200)
+            ->assertJson(['in_perimeter' => true]);
+    }
 }
