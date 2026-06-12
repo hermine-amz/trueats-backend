@@ -90,8 +90,6 @@ class TrueatsApiTest extends TestCase
 
     public function test_get_restaurant_by_qr_code()
     {
-        $this->actingAs($this->user);
-
         $response = $this->getJson('/api/restaurants/qr/BISTRO_GOURMET_QR');
 
         $response->assertStatus(200)

@@ -10,6 +10,7 @@ use App\Http\Controllers\ExplorationController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/restaurants/qr/{qr_code}', [RestaurantController::class, 'getByQrCode']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -17,7 +18,6 @@ Route::middleware('auth:sanctum')->group(function () {
         return $request->user();
     });
 
-    Route::get('/restaurants/qr/{qr_code}', [RestaurantController::class, 'getByQrCode']);
     Route::post('/restaurants/{id}/verify-gps', [RestaurantController::class, 'verifyGps']);
 
     Route::post('/avis', [AvisController::class, 'store']);
