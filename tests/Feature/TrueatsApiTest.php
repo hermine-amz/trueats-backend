@@ -15,6 +15,8 @@ class TrueatsApiTest extends TestCase
     use RefreshDatabase;
 
     private $user;
+    private $gerant;
+    private $admin;
     private $restaurant;
     private $category;
 
@@ -31,12 +33,21 @@ class TrueatsApiTest extends TestCase
             'compte_active' => true,
         ]);
 
-        $gerant = User::create([
+        $this->gerant = User::create([
             'nom' => 'Dupont',
             'prenom' => 'Jean',
             'email' => 'gerant@trueats.com',
             'password' => bcrypt('password'),
             'role' => 'gerant',
+            'compte_active' => true,
+        ]);
+
+        $this->admin = User::create([
+            'nom' => 'System',
+            'prenom' => 'Admin',
+            'email' => 'admin@trueats.com',
+            'password' => bcrypt('password'),
+            'role' => 'admin',
             'compte_active' => true,
         ]);
 
@@ -46,7 +57,8 @@ class TrueatsApiTest extends TestCase
             'latitude' => 48.8698,
             'longitude' => 2.3312,
             'qr_code_identifier' => 'BISTRO_GOURMET_QR',
-            'gerant_id' => $gerant->id,
+            'gerant_id' => $this->gerant->id,
+            'est_valide' => true,
         ]);
 
         $this->category = Category::create([
@@ -221,5 +233,247 @@ class TrueatsApiTest extends TestCase
         // Should be in perimeter (radius 28m > 22.2m distance)
         $response->assertStatus(200)
             ->assertJson(['in_perimeter' => true]);
+    }
+
+    public function test_user_profile_management()
+    {
+        $this->actingAs($this->user);
+
+        // Update profile
+        $response = $this->putJson('/api/user/profile', [
+            'nom' => 'NewNom',
+            'prenom' => 'NewPrenom',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('user.nom', 'NewNom')
+            ->assertJsonPath('user.prenom', 'NewPrenom');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $this->user->id,
+            'nom' => 'NewNom',
+            'prenom' => 'NewPrenom',
+        ]);
+
+        // Self delete
+        $response = $this->deleteJson('/api/user/profile');
+        $response->assertStatus(200);
+
+        $this->assertDatabaseMissing('users', [
+            'id' => $this->user->id,
+        ]);
+    }
+
+    public function test_manager_can_update_restaurant()
+    {
+        $otherGerant = User::create([
+            'nom' => 'Other',
+            'prenom' => 'Gerant',
+            'email' => 'other_gerant@trueats.com',
+            'password' => bcrypt('password'),
+            'role' => 'gerant',
+            'compte_active' => true,
+        ]);
+
+        // 1. Client cannot update restaurant
+        $this->actingAs($this->user);
+        $response = $this->putJson("/api/restaurants/{$this->restaurant->id}", [
+            'nom' => 'Hacked Bistro',
+        ]);
+        $response->assertStatus(403);
+
+        // 2. Other manager cannot update restaurant
+        $this->actingAs($otherGerant);
+        $response = $this->putJson("/api/restaurants/{$this->restaurant->id}", [
+            'nom' => 'Hacked Bistro 2',
+        ]);
+        $response->assertStatus(403);
+
+        // 3. Owner manager can update restaurant
+        $this->actingAs($this->gerant);
+        $response = $this->putJson("/api/restaurants/{$this->restaurant->id}", [
+            'nom' => 'Le Bistro Mis à Jour',
+            'superficie' => 200,
+        ]);
+        $response->assertStatus(200)
+            ->assertJsonPath('restaurant.nom', 'Le Bistro Mis à Jour')
+            ->assertJsonPath('restaurant.superficie', 200);
+
+        $this->assertDatabaseHas('restaurants', [
+            'id' => $this->restaurant->id,
+            'nom' => 'Le Bistro Mis à Jour',
+            'superficie' => 200,
+        ]);
+    }
+
+    public function test_manager_can_crud_plats()
+    {
+        $otherGerant = User::create([
+            'nom' => 'Other',
+            'prenom' => 'Gerant',
+            'email' => 'other_gerant@trueats.com',
+            'password' => bcrypt('password'),
+            'role' => 'gerant',
+            'compte_active' => true,
+        ]);
+
+        // 1. Create Plat - Other manager fails
+        $this->actingAs($otherGerant);
+        $response = $this->postJson('/api/plats', [
+            'nom' => 'Burger',
+            'prix' => 8.50,
+            'restaurant_id' => $this->restaurant->id,
+            'categorie_id' => $this->category->id,
+        ]);
+        $response->assertStatus(403);
+
+        // 2. Create Plat - Owner manager succeeds
+        $this->actingAs($this->gerant);
+        $response = $this->postJson('/api/plats', [
+            'nom' => 'Burger Gourmet',
+            'description' => 'Avec frites',
+            'prix' => 10.50,
+            'restaurant_id' => $this->restaurant->id,
+            'categorie_id' => $this->category->id,
+        ]);
+        $response->assertStatus(201);
+        $platId = $response->json('id');
+
+        $this->assertDatabaseHas('plats', [
+            'id' => $platId,
+            'nom' => 'Burger Gourmet',
+        ]);
+
+        // 3. Update Plat
+        $response = $this->putJson("/api/plats/{$platId}", [
+            'prix' => 11.00,
+        ]);
+        $response->assertStatus(200)
+            ->assertJsonPath('prix', 11);
+
+        // 4. Delete Plat
+        $response = $this->deleteJson("/api/plats/{$platId}");
+        $response->assertStatus(200);
+
+        $this->assertDatabaseMissing('plats', [
+            'id' => $platId,
+        ]);
+    }
+
+    public function test_admin_can_moderate_restaurant()
+    {
+        // 1. Unvalidate restaurant
+        $this->actingAs($this->admin);
+        $response = $this->patchJson("/api/admin/restaurants/{$this->restaurant->id}/valider", [
+            'est_valide' => false,
+        ]);
+        $response->assertStatus(200);
+
+        // Verify public client cannot view menu
+        $this->actingAs($this->user);
+        $response = $this->getJson("/api/restaurants/qr/BISTRO_GOURMET_QR");
+        $response->assertStatus(403);
+
+        // Verify client cannot post review
+        $response = $this->postJson('/api/avis', [
+            'restaurant_id' => $this->restaurant->id,
+            'note' => 5,
+            'commentaire' => 'Super',
+            'latitude_client' => 48.8698,
+            'longitude_client' => 2.3312
+        ]);
+        $response->assertStatus(403);
+
+        // 2. Validate restaurant
+        $this->actingAs($this->admin);
+        $response = $this->patchJson("/api/admin/restaurants/{$this->restaurant->id}/valider", [
+            'est_valide' => true,
+        ]);
+        $response->assertStatus(200);
+
+        // 3. Block restaurant temporarily (e.g. 5 days)
+        $response = $this->postJson("/api/admin/restaurants/{$this->restaurant->id}/bloquer", [
+            'bloque' => true,
+            'duree_jours' => 5,
+        ]);
+        $response->assertStatus(200);
+
+        // Verify client cannot view menu
+        $this->actingAs($this->user);
+        $response = $this->getJson("/api/restaurants/qr/BISTRO_GOURMET_QR");
+        $response->assertStatus(403);
+
+        // 4. Unblock restaurant
+        $this->actingAs($this->admin);
+        $response = $this->postJson("/api/admin/restaurants/{$this->restaurant->id}/bloquer", [
+            'bloque' => false,
+        ]);
+        $response->assertStatus(200);
+
+        // Verify client can view menu now
+        $this->actingAs($this->user);
+        $response = $this->getJson("/api/restaurants/qr/BISTRO_GOURMET_QR");
+        $response->assertStatus(200);
+    }
+
+    public function test_admin_can_moderate_user()
+    {
+        $this->actingAs($this->admin);
+
+        // 1. Block user temporarily for 1 day
+        $response = $this->postJson("/api/admin/users/{$this->user->id}/bloquer", [
+            'bloque' => true,
+            'duree_jours' => 1,
+        ]);
+        $response->assertStatus(200);
+
+        // Verify login fails
+        $response = $this->postJson('/api/login', [
+            'email' => 'client@trueats.com',
+            'password' => 'password',
+        ]);
+        $response->assertStatus(403)
+            ->assertJsonMissing(['access_token']);
+
+        // 2. Unblock user
+        $this->actingAs($this->admin);
+        $response = $this->postJson("/api/admin/users/{$this->user->id}/bloquer", [
+            'bloque' => false,
+        ]);
+        $response->assertStatus(200);
+
+        // Verify login succeeds
+        $response = $this->postJson('/api/login', [
+            'email' => 'client@trueats.com',
+            'password' => 'password',
+        ]);
+        $response->assertStatus(200)
+            ->assertJsonStructure(['access_token']);
+
+        // 3. Block user permanently
+        $this->actingAs($this->admin);
+        $response = $this->postJson("/api/admin/users/{$this->user->id}/bloquer", [
+            'bloque' => true,
+        ]);
+        $response->assertStatus(200);
+
+        // Verify login fails
+        $response = $this->postJson('/api/login', [
+            'email' => 'client@trueats.com',
+            'password' => 'password',
+        ]);
+        $response->assertStatus(403);
+
+        // 4. Delete user
+        $this->actingAs($this->admin);
+        $response = $this->deleteJson("/api/admin/users/{$this->user->id}");
+        $response->assertStatus(200);
+
+        // Verify login returns 422/ValidationException because user is deleted (not found)
+        $response = $this->postJson('/api/login', [
+            'email' => 'client@trueats.com',
+            'password' => 'password',
+        ]);
+        $response->assertStatus(422);
     }
 }

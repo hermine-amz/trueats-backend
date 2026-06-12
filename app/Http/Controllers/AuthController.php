@@ -56,9 +56,13 @@ class AuthController extends Controller
             ]);
         }
 
-        if (!$user->compte_active) {
+        if ($user->estBloque()) {
+            $message = 'Your account is deactivated.';
+            if ($user->bloque_jusqua && $user->bloque_jusqua->isFuture()) {
+                $message = 'Your account is suspended until ' . $user->bloque_jusqua->toDateTimeString() . '.';
+            }
             return response()->json([
-                'message' => 'Your account is deactivated.'
+                'message' => $message
             ], 403);
         }
 

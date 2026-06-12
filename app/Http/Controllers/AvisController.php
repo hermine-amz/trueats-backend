@@ -21,6 +21,12 @@ class AvisController extends Controller
 
         $restaurant = Restaurant::findOrFail($validated['restaurant_id']);
 
+        if (!$restaurant->est_valide || $restaurant->estBloque()) {
+            return response()->json([
+                'message' => 'This restaurant is currently unavailable.'
+            ], 403);
+        }
+
         $distance = $this->calculateDistance(
             $validated['latitude_client'],
             $validated['longitude_client'],

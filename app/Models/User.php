@@ -9,7 +9,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 
-#[Fillable(['nom', 'prenom', 'email', 'password', 'telephone', 'role', 'compte_active', 'sexe'])]
+#[Fillable(['nom', 'prenom', 'email', 'password', 'telephone', 'role', 'compte_active', 'sexe', 'bloque_jusqua'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -21,7 +21,13 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'compte_active' => 'boolean',
+            'bloque_jusqua' => 'datetime',
         ];
+    }
+
+    public function estBloque(): bool
+    {
+        return !$this->compte_active || ($this->bloque_jusqua && $this->bloque_jusqua->isFuture());
     }
 
     public function restaurants()
