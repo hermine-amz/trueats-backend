@@ -11,8 +11,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\PlatController;
 
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 Route::get('/restaurants/qr/{qr_code}', [RestaurantController::class, 'getByQrCode']);
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -27,8 +27,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/restaurants/{id}/verify-gps', [RestaurantController::class, 'verifyGps']);
 
-    Route::post('/avis', [AvisController::class, 'store']);
-    Route::post('/avis/{id}/signal', [AvisController::class, 'signal']);
+    Route::post('/avis', [AvisController::class, 'store'])->middleware('throttle:10,1');
+    Route::post('/avis/{id}/signal', [AvisController::class, 'signal'])->middleware('throttle:5,1');
 
     Route::post('/restaurants/{id}/explore', [ExplorationController::class, 'explore']);
     Route::get('/explorations', [ExplorationController::class, 'index']);

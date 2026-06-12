@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Restaurant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class RestaurantController extends Controller
 {
@@ -93,7 +94,6 @@ class RestaurantController extends Controller
             'adresse' => 'required|string|max:255',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
-            'qr_code_identifier' => 'required|string|unique:restaurants,qr_code_identifier',
             'superficie' => 'required|integer|min:10',
         ]);
 
@@ -132,7 +132,7 @@ class RestaurantController extends Controller
             'adresse' => $validated['adresse'],
             'latitude' => $validated['latitude'],
             'longitude' => $validated['longitude'],
-            'qr_code_identifier' => $validated['qr_code_identifier'],
+            'qr_code_identifier' => Str::uuid()->toString(),
             'superficie' => $validated['superficie'],
             'gerant_id' => $request->user()->id,
             'est_valide' => false, // Default to false for administrator validation

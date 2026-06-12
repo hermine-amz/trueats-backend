@@ -42,7 +42,7 @@ class AvisController extends Controller
 
         $avis = Avis::create([
             'note' => $validated['note'],
-            'commentaire' => $validated['commentaire'],
+            'commentaire' => strip_tags($validated['commentaire']),
             'date_visite' => now(),
             'lat_client' => $validated['latitude_client'],
             'long_client' => $validated['longitude_client'],

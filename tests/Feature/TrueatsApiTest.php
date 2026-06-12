@@ -500,10 +500,11 @@ class TrueatsApiTest extends TestCase
             'adresse' => 'Cotonou',
             'latitude' => 6.3676,
             'longitude' => 2.4253,
-            'qr_code_identifier' => 'CHEZ_JEAN_QR_1',
             'superficie' => 80
         ]);
         $response->assertStatus(201);
+        $qrCode = $response->json('restaurant.qr_code_identifier');
+        $this->assertMatchesRegularExpression('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/', $qrCode);
 
         // 2. Exact coordinates duplicate
         $response = $this->postJson('/api/restaurants', [
@@ -511,7 +512,6 @@ class TrueatsApiTest extends TestCase
             'adresse' => 'Cotonou',
             'latitude' => 6.3676,
             'longitude' => 2.4253,
-            'qr_code_identifier' => 'CHEZ_MARIE_QR',
             'superficie' => 100
         ]);
         $response->assertStatus(422);
@@ -522,7 +522,6 @@ class TrueatsApiTest extends TestCase
             'adresse' => 'Cotonou Bis',
             'latitude' => 6.3676 + 0.0002, // ~22m away
             'longitude' => 2.4253,
-            'qr_code_identifier' => 'CHEZ_JEAN_QR_2',
             'superficie' => 80
         ]);
         $response->assertStatus(422);
@@ -533,9 +532,28 @@ class TrueatsApiTest extends TestCase
             'adresse' => 'Cotonou Loin',
             'latitude' => 6.3676 + 0.001, // ~110m away
             'longitude' => 2.4253,
-            'qr_code_identifier' => 'CHEZ_JEAN_QR_3',
             'superficie' => 80
         ]);
         $response->assertStatus(201);
+    }
+
+    public function test_avis_xss_protection()
+    {
+        $this->actingAs($this->user);
+
+        $response = $this->postJson('/api/avis', [
+            'restaurant_id' => $this->restaurant->id,
+            'note' => 4,
+            'commentaire' => '<script>alert("hack")</script>Excellent repas <b>incroyable</b>!',
+            'latitude_client' => 48.8698,
+            'longitude_client' => 2.3312
+        ]);
+
+        $response->assertStatus(201);
+        $this->assertEquals('alert("hack")Excellent repas incroyable!', $response->json('commentaire'));
+        $this->assertDatabaseHas('avis', [
+            'id' => $response->json('id'),
+            'commentaire' => 'alert("hack")Excellent repas incroyable!',
+        ]);
     }
 }
