@@ -61,6 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Admin only routes
     Route::middleware('role:admin')->group(function () {
         Route::get('/admin/demandes', [AdminController::class, 'demandes']);
+        Route::get('/admin/stats', [AdminController::class, 'stats']);
         Route::patch('/admin/restaurants/{id}/valider', [AdminController::class, 'validerRestaurant']);
         Route::post('/admin/restaurants/{id}/bloquer', [AdminController::class, 'bloquerRestaurant']);
         Route::post('/admin/users/{id}/bloquer', [AdminController::class, 'bloquerUser']);

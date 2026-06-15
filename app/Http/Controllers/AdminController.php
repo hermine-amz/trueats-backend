@@ -201,4 +201,41 @@ class AdminController extends Controller
             'message' => 'Signalement processed successfully.'
         ]);
     }
+
+    public function stats(Request $request)
+    {
+        $totalUsers = User::count();
+        $totalClients = User::whereIn('role', ['client', 'utilisateur'])->count();
+        $totalGerants = User::where('role', 'gerant')->count();
+        $totalAdmins = User::where('role', 'admin')->count();
+
+        $totalRestaurants = Restaurant::count();
+        $totalRestaurantsValides = Restaurant::where('est_valide', true)->count();
+        $totalRestaurantsEnAttente = Restaurant::where('est_valide', false)->whereNull('bloque_jusqua')->count();
+        $totalRestaurantsBloques = Restaurant::whereNotNull('bloque_jusqua')->count();
+
+        $totalAvis = \App\Models\Avis::count();
+        $totalAvisSignales = \App\Models\Signal::distinct('avis_id')->count('avis_id');
+        $averageRating = \App\Models\Avis::avg('note') ?? 0;
+
+        return response()->json([
+            'users' => [
+                'total' => $totalUsers,
+                'clients' => $totalClients,
+                'gerants' => $totalGerants,
+                'admins' => $totalAdmins,
+            ],
+            'restaurants' => [
+                'total' => $totalRestaurants,
+                'valides' => $totalRestaurantsValides,
+                'en_attente' => $totalRestaurantsEnAttente,
+                'bloques' => $totalRestaurantsBloques,
+            ],
+            'avis' => [
+                'total' => $totalAvis,
+                'signales' => $totalAvisSignales,
+                'note_moyenne' => round($averageRating, 2),
+            ]
+        ]);
+    }
 }
