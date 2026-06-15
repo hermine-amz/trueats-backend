@@ -17,6 +17,7 @@ class PlatController extends Controller
             'disponible' => 'boolean',
             'restaurant_id' => 'required|exists:restaurants,id',
             'categorie_id' => 'required|exists:categories,id',
+            'image_url' => 'nullable|string|max:2048',
         ]);
 
         $restaurant = Restaurant::findOrFail($validated['restaurant_id']);
@@ -51,6 +52,7 @@ class PlatController extends Controller
             'prix' => 'sometimes|numeric|min:0',
             'disponible' => 'sometimes|boolean',
             'categorie_id' => 'sometimes|exists:categories,id',
+            'image_url' => 'sometimes|nullable|string|max:2048',
         ]);
 
         $plat->update($validated);

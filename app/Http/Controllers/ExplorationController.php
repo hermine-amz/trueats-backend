@@ -10,7 +10,7 @@ class ExplorationController extends Controller
 {
     public function index(Request $request)
     {
-        $explorations = Exploration::with('restaurant')
+        $explorations = Exploration::with('restaurant.plats.category')
             ->where('user_id', $request->user()->id)
             ->get();
 

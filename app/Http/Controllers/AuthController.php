@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
+// Note de soutenance : Pourquoi Sanctum et pas JWT ?
+// Sanctum est officiel Laravel, léger, et parfait pour les applications mobiles/SPA.
+// Il utilise de simples tokens stockés en base de données, ce qui évite la complexité
+// de gestion et d'invalidation des tokens JWT (blacklist, secrets tournants).
 class AuthController extends Controller
 {
     public function register(Request $request)
@@ -18,7 +22,7 @@ class AuthController extends Controller
             'password' => 'required|string|min:8',
             'telephone' => 'nullable|string|max:20',
             'sexe' => 'nullable|string|max:10',
-            'role' => 'nullable|string|in:client,gerant',
+            'role' => 'nullable|string|in:client',
         ]);
 
         $user = User::create([
@@ -28,7 +32,7 @@ class AuthController extends Controller
             'password' => Hash::make($validated['password']),
             'telephone' => $validated['telephone'] ?? null,
             'sexe' => $validated['sexe'] ?? null,
-            'role' => $validated['role'] ?? 'client',
+            'role' => 'client',
             'compte_active' => true,
         ]);
 

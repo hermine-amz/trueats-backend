@@ -6,10 +6,18 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 
-#[Fillable(['nom', 'description', 'prix', 'disponible', 'restaurant_id', 'categorie_id'])]
+#[Fillable(['nom', 'description', 'prix', 'disponible', 'restaurant_id', 'categorie_id', 'image_url'])]
 class Plat extends Model
 {
     use HasFactory;
+
+    protected function casts(): array
+    {
+        return [
+            'disponible' => 'boolean',
+            'prix' => 'float',
+        ];
+    }
 
     public function restaurant()
     {

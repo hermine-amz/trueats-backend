@@ -6,7 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 
-#[Fillable(['nom', 'adresse', 'latitude', 'longitude', 'qr_code_identifier', 'gerant_id', 'superficie', 'est_valide', 'bloque_jusqua'])]
+#[Fillable([
+    'nom', 'adresse', 'quartier', 'categorie', 'type_cuisine',
+    'latitude', 'longitude', 'qr_code_identifier', 'gerant_id',
+    'superficie', 'est_valide', 'bloque_jusqua',
+    'logo_url', 'photo_url',
+    'cip_url', 'ifu_numero', 'ifu_attestation_url',
+    'rccm_numero', 'rccm_extrait_url', 'motif_rejet',
+])]
 class Restaurant extends Model
 {
     use HasFactory;

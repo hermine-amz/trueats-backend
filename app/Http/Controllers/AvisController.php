@@ -27,6 +27,12 @@ class AvisController extends Controller
             ], 403);
         }
 
+        // Note de soutenance : double vérification GPS.
+        // La première vérification se fait côté client (Flutter) pour adapter l'UI (bouton actif/inactif).
+        // Cette deuxième vérification côté serveur est indispensable pour la sécurité afin d'empêcher
+        // la soumission de faux avis via des requêtes HTTP manipulées manuellement.
+        // L'algorithme Haversine donne une précision suffisante pour des distances courtes (<500m).
+        // Pour de longues distances, Vincenty serait plus précis mais beaucoup plus complexe.
         $distance = $this->calculateDistance(
             $validated['latitude_client'],
             $validated['longitude_client'],
@@ -69,6 +75,26 @@ class AvisController extends Controller
         ]);
 
         return response()->json($signal, 201);
+    }
+
+    public function index($restaurantId)
+    {
+        $avis = Avis::with(['user', 'restaurant'])
+            ->where('restaurant_id', $restaurantId)
+            ->where('est_publie', true)
+            ->latest()
+            ->get();
+
+        return response()->json($avis);
+    }
+
+    public function allReviews(Request $request)
+    {
+        $avis = Avis::with(['user', 'restaurant'])
+            ->latest()
+            ->get();
+
+        return response()->json($avis);
     }
 
     private function calculateDistance($lat1, $lon1, $lat2, $lon2)

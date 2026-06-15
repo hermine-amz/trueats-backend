@@ -556,4 +556,109 @@ class TrueatsApiTest extends TestCase
             'commentaire' => 'alert("hack")Excellent repas incroyable!',
         ]);
     }
+
+    public function test_image_upload_and_restaurant_dish_update()
+    {
+        $this->actingAs($this->gerant);
+
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $file = \Illuminate\Http\UploadedFile::fake()->image('logo.png');
+
+        $response = $this->postJson('/api/upload/image', [
+            'image' => $file,
+            'type' => 'logo'
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonStructure(['url', 'path']);
+
+        $url = $response->json('url');
+
+        // Update restaurant
+        $response = $this->putJson("/api/restaurants/{$this->restaurant->id}", [
+            'logo_url' => $url,
+            'photo_url' => $url,
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertDatabaseHas('restaurants', [
+            'id' => $this->restaurant->id,
+            'logo_url' => $url,
+            'photo_url' => $url,
+        ]);
+
+        // Add dish with image
+        $response = $this->postJson('/api/plats', [
+            'nom' => 'Pizza Speciale',
+            'prix' => 15.00,
+            'restaurant_id' => $this->restaurant->id,
+            'categorie_id' => $this->category->id,
+            'image_url' => $url,
+        ]);
+
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('plats', [
+            'nom' => 'Pizza Speciale',
+            'image_url' => $url,
+        ]);
+
+        // Update dish
+        $platId = $response->json('id');
+        $response = $this->putJson("/api/plats/{$platId}", [
+            'image_url' => 'new_image_url',
+        ]);
+        $response->assertStatus(200);
+        $this->assertDatabaseHas('plats', [
+            'id' => $platId,
+            'image_url' => 'new_image_url',
+        ]);
+    }
+
+    public function test_client_restaurant_submission_and_upgrade_upon_admin_validation()
+    {
+        // 1. Client submits restaurant
+        $this->actingAs($this->user);
+
+        $response = $this->postJson('/api/restaurants', [
+            'nom' => 'Maquis du Coin',
+            'adresse' => 'Cotonou, Fidjrosse',
+            'quartier' => 'Fidjrosse',
+            'latitude' => 6.3500,
+            'longitude' => 2.3800,
+            'superficie' => 120,
+        ]);
+
+        $response->assertStatus(201);
+        $restaurantId = $response->json('restaurant.id');
+
+        $this->assertDatabaseHas('restaurants', [
+            'id' => $restaurantId,
+            'nom' => 'Maquis du Coin',
+            'est_valide' => false,
+            'gerant_id' => $this->user->id,
+        ]);
+
+        // Client role is still client
+        $this->assertEquals('client', $this->user->fresh()->role);
+
+        // 2. Admin validates the restaurant
+        $this->actingAs($this->admin);
+
+        $response = $this->patchJson("/api/admin/restaurants/{$restaurantId}/valider", [
+            'est_valide' => true,
+        ]);
+
+        $response->assertStatus(200);
+
+        // Restaurant is validated
+        $this->assertDatabaseHas('restaurants', [
+            'id' => $restaurantId,
+            'est_valide' => true,
+        ]);
+
+        // Client role upgraded to gerant!
+        $this->assertEquals('gerant', $this->user->fresh()->role);
+    }
 }
+

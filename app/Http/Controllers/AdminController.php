@@ -8,19 +8,65 @@ use Illuminate\Http\Request;
 
 class AdminController extends Controller
 {
+    public function demandes(Request $request)
+    {
+        // Restaurants en attente de validation avec les infos du gérant
+        $demandes = Restaurant::with('gerant')
+            ->where('est_valide', false)
+            ->whereNull('bloque_jusqua')
+            ->latest()
+            ->get()
+            ->map(function ($r) {
+                return [
+                    'id'                   => $r->id,
+                    'nom'                  => $r->nom,
+                    'adresse'              => $r->adresse,
+                    'quartier'             => $r->quartier,
+                    'categorie'            => $r->categorie,
+                    'type_cuisine'         => $r->type_cuisine,
+                    'superficie'           => $r->superficie,
+                    'latitude'             => $r->latitude,
+                    'longitude'            => $r->longitude,
+                    'created_at'           => $r->created_at,
+                    'cip_url'              => $r->cip_url,
+                    'ifu_numero'           => $r->ifu_numero,
+                    'ifu_attestation_url'  => $r->ifu_attestation_url,
+                    'rccm_numero'          => $r->rccm_numero,
+                    'rccm_extrait_url'     => $r->rccm_extrait_url,
+                    'gerant' => $r->gerant ? [
+                        'id'     => $r->gerant->id,
+                        'nom'    => $r->gerant->nom,
+                        'prenom' => $r->gerant->prenom,
+                        'email'  => $r->gerant->email,
+                    ] : null,
+                ];
+            });
+
+        return response()->json($demandes);
+    }
+
     public function validerRestaurant(Request $request, $id)
     {
         $validated = $request->validate([
-            'est_valide' => 'required|boolean',
+            'est_valide'   => 'required|boolean',
+            'motif_rejet'  => 'nullable|string|max:500',
         ]);
 
         $restaurant = Restaurant::findOrFail($id);
         $restaurant->update([
-            'est_valide' => $validated['est_valide']
+            'est_valide'  => $validated['est_valide'],
+            'motif_rejet' => $validated['est_valide'] ? null : ($validated['motif_rejet'] ?? null),
         ]);
 
+        if ($validated['est_valide'] && $restaurant->gerant_id) {
+            $gerant = User::find($restaurant->gerant_id);
+            if ($gerant && $gerant->role === 'client') {
+                $gerant->update(['role' => 'gerant']);
+            }
+        }
+
         return response()->json([
-            'message' => $validated['est_valide'] ? 'Restaurant validated successfully.' : 'Restaurant validation rejected.',
+            'message'    => $validated['est_valide'] ? 'Restaurant validated successfully.' : 'Restaurant validation rejected.',
             'restaurant' => $restaurant
         ]);
     }
@@ -121,6 +167,38 @@ class AdminController extends Controller
 
         return response()->json([
             'message' => 'User account deleted successfully.'
+        ]);
+    }
+
+    public function allUsers(Request $request)
+    {
+        return response()->json(User::all());
+    }
+
+    public function allSignalements(Request $request)
+    {
+        $signals = \App\Models\Signal::with(['user', 'avis.user', 'avis.restaurant'])->latest()->get();
+        return response()->json($signals);
+    }
+
+    public function handleSignalement(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'keep_review' => 'required|boolean',
+        ]);
+
+        $signal = \App\Models\Signal::findOrFail($id);
+
+        if (!$validated['keep_review']) {
+            if ($signal->avis) {
+                $signal->avis->delete();
+            }
+        } else {
+            $signal->delete();
+        }
+
+        return response()->json([
+            'message' => 'Signalement processed successfully.'
         ]);
     }
 }
