@@ -54,4 +54,14 @@ class UploadController extends Controller
             'path' => $path,
         ], 201);
     }
+
+    public function serveFile($path)
+    {
+        if (!Storage::disk('public')->exists($path)) {
+            abort(404);
+        }
+
+        $filePath = Storage::disk('public')->path($path);
+        return response()->file($filePath);
+    }
 }

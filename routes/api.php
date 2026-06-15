@@ -20,6 +20,7 @@ Route::get('/restaurants', [RestaurantController::class, 'index']);
 Route::get('/restaurants/{id}', [RestaurantController::class, 'show']);
 Route::get('/restaurants/{id}/avis', [AvisController::class, 'index']);
 Route::get('/categories', [CategoryController::class, 'index']);
+Route::get('/storage/{path}', [UploadController::class, 'serveFile'])->where('path', '.*');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
