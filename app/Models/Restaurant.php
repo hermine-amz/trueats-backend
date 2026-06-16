@@ -31,9 +31,6 @@ class Restaurant extends Model
 
     public function getRayonValidationAttribute()
     {
-        if (config('app.env') === 'local') {
-            return 999999; // 999 km tolerance for local development and testing
-        }
         $superficie = $this->superficie ?? 100;
         $rayonGeometrique = sqrt($superficie / pi());
         return max(15, (int) round($rayonGeometrique + 15));
