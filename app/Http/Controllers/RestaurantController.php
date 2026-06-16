@@ -75,7 +75,9 @@ class RestaurantController extends Controller
 
         $validated = $request->validate([
             'nom' => 'sometimes|string|max:255',
-            'adresse' => 'sometimes|string|max:255',
+            'telephone' => 'sometimes|nullable|string|max:50',
+            'horaires' => 'sometimes|nullable|string|max:255',
+            'adresse' => 'sometimes|string|max:1000',
             'quartier' => 'sometimes|nullable|string|max:100',
             'categorie' => 'sometimes|nullable|string|max:100',
             'type_cuisine' => 'sometimes|nullable|string|max:100',
@@ -128,7 +130,9 @@ class RestaurantController extends Controller
     {
         $validated = $request->validate([
             'nom'               => 'required|string|max:255',
-            'adresse'           => 'required|string|max:255',
+            'telephone'         => 'nullable|string|max:50',
+            'horaires'          => 'nullable|string|max:255',
+            'adresse'           => 'required|string|max:1000',
             'quartier'          => 'nullable|string|max:100',
             'categorie'         => 'nullable|string|max:100',
             'type_cuisine'      => 'nullable|string|max:100',
@@ -175,6 +179,8 @@ class RestaurantController extends Controller
         // 3. Create the restaurant — est_valide = false par défaut, en attente de validation admin
         $restaurant = Restaurant::create([
             'nom'                  => $validated['nom'],
+            'telephone'            => $validated['telephone'] ?? null,
+            'horaires'             => $validated['horaires'] ?? null,
             'adresse'              => $validated['adresse'],
             'quartier'             => $validated['quartier'] ?? null,
             'categorie'            => $validated['categorie'] ?? null,

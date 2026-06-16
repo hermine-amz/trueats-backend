@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 
 #[Fillable([
-    'nom', 'adresse', 'quartier', 'categorie', 'type_cuisine',
+    'nom', 'telephone', 'horaires', 'adresse', 'quartier', 'categorie', 'type_cuisine',
     'latitude', 'longitude', 'qr_code_identifier', 'gerant_id',
     'superficie', 'est_valide', 'bloque_jusqua', 'est_archive',
     'logo_url', 'photo_url',
