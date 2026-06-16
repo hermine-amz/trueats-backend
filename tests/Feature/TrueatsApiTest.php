@@ -306,6 +306,54 @@ class TrueatsApiTest extends TestCase
         ]);
     }
 
+    public function test_manager_update_restaurant_name_resets_validation()
+    {
+        $this->actingAs($this->gerant);
+
+        // 1. Initially valid
+        $this->restaurant->update([
+            'nom' => 'Initial Name',
+            'est_valide' => true,
+            'motif_rejet' => 'some reject motif'
+        ]);
+
+        // 2. Change name -> should reset validation and clear rejection motif
+        $response = $this->putJson("/api/restaurants/{$this->restaurant->id}", [
+            'nom' => 'New Name'
+        ]);
+
+        if ($response->status() !== 200) {
+            dump($response->json());
+        }
+
+        $response->assertStatus(200);
+        $this->assertDatabaseHas('restaurants', [
+            'id' => $this->restaurant->id,
+            'nom' => 'New Name',
+            'est_valide' => false,
+            'motif_rejet' => null
+        ]);
+
+        // 3. Admin updates name -> does NOT reset validation
+        $restaurant = $this->restaurant->fresh();
+        $restaurant->update([
+            'nom' => 'Another Name',
+            'est_valide' => true,
+        ]);
+
+        $this->actingAs($this->admin);
+        $response = $this->putJson("/api/restaurants/{$restaurant->id}", [
+            'nom' => 'Admin Renamed'
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertDatabaseHas('restaurants', [
+            'id' => $restaurant->id,
+            'nom' => 'Admin Renamed',
+            'est_valide' => true,
+        ]);
+    }
+
     public function test_manager_can_crud_plats()
     {
         $otherGerant = User::create([

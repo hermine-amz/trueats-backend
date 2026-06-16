@@ -22,7 +22,7 @@ Route::get('/restaurants/{id}/avis', [AvisController::class, 'index']);
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/storage/{path}', [UploadController::class, 'serveFile'])->where('path', '.*');
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'check_blocked'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', function (Request $request) {
         return $request->user();
@@ -43,16 +43,17 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Registered clients can submit a restaurant. The account becomes "gerant"
     // only after an administrator validates the submitted restaurant.
-    Route::middleware('role:client,gerant')->group(function () {
+    Route::middleware('role:client,gerant,admin')->group(function () {
         Route::post('/upload/document', [UploadController::class, 'storeDocument']);
         Route::post('/restaurants', [RestaurantController::class, 'store']);
+        Route::put('/restaurants/{id}', [RestaurantController::class, 'update']);
+        Route::delete('/restaurants/{id}', [RestaurantController::class, 'destroy']);
     });
 
     // Manager only routes
     Route::middleware('role:gerant')->group(function () {
         Route::post('/categories', [CategoryController::class, 'store']);
         Route::post('/upload/image', [UploadController::class, 'store']);
-        Route::put('/restaurants/{id}', [RestaurantController::class, 'update']);
         Route::post('/plats', [PlatController::class, 'store']);
         Route::put('/plats/{id}', [PlatController::class, 'update']);
         Route::delete('/plats/{id}', [PlatController::class, 'destroy']);

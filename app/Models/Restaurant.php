@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 #[Fillable([
     'nom', 'adresse', 'quartier', 'categorie', 'type_cuisine',
     'latitude', 'longitude', 'qr_code_identifier', 'gerant_id',
-    'superficie', 'est_valide', 'bloque_jusqua',
+    'superficie', 'est_valide', 'bloque_jusqua', 'est_archive',
     'logo_url', 'photo_url',
     'cip_url', 'ifu_numero', 'ifu_attestation_url',
     'rccm_numero', 'rccm_extrait_url', 'motif_rejet',
@@ -24,6 +24,7 @@ class Restaurant extends Model
     {
         return [
             'est_valide' => 'boolean',
+            'est_archive' => 'boolean',
             'bloque_jusqua' => 'datetime',
         ];
     }

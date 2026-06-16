@@ -66,8 +66,8 @@ class RestaurantController extends Controller
     {
         $restaurant = Restaurant::findOrFail($id);
 
-        // Check if current user is the owner
-        if ($restaurant->gerant_id !== $request->user()->id) {
+        // Check if current user is the owner or an admin
+        if ($restaurant->gerant_id !== $request->user()->id && $request->user()->role !== 'admin') {
             return response()->json([
                 'message' => 'Unauthorized. You do not own this restaurant.'
             ], 403);
@@ -76,18 +76,51 @@ class RestaurantController extends Controller
         $validated = $request->validate([
             'nom' => 'sometimes|string|max:255',
             'adresse' => 'sometimes|string|max:255',
+            'quartier' => 'sometimes|nullable|string|max:100',
+            'categorie' => 'sometimes|nullable|string|max:100',
+            'type_cuisine' => 'sometimes|nullable|string|max:100',
             'latitude' => 'sometimes|numeric',
             'longitude' => 'sometimes|numeric',
             'superficie' => 'sometimes|integer|min:1',
             'logo_url' => 'sometimes|nullable|string|max:2048',
             'photo_url' => 'sometimes|nullable|string|max:2048',
+            'est_archive' => 'sometimes|boolean',
+            'cip_url' => 'sometimes|nullable|string|max:2048',
+            'ifu_numero' => 'sometimes|nullable|string|max:50',
+            'ifu_attestation_url' => 'sometimes|nullable|string|max:2048',
         ]);
+
+        if ($request->user()->role !== 'admin') {
+            $nameChanged = isset($validated['nom']) && $validated['nom'] !== $restaurant->nom;
+            if ($nameChanged || (!$restaurant->est_valide && $restaurant->motif_rejet !== null)) {
+                $validated['motif_rejet'] = null;
+                $validated['est_valide'] = false;
+            }
+        }
 
         $restaurant->update($validated);
 
         return response()->json([
             'message' => 'Restaurant updated successfully.',
             'restaurant' => $restaurant
+        ]);
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        $restaurant = Restaurant::findOrFail($id);
+
+        // Check if current user is the owner or an admin
+        if ($restaurant->gerant_id !== $request->user()->id && $request->user()->role !== 'admin') {
+            return response()->json([
+                'message' => 'Unauthorized. You do not own this restaurant.'
+            ], 403);
+        }
+
+        $restaurant->delete();
+
+        return response()->json([
+            'message' => 'Restaurant deleted successfully.'
         ]);
     }
 
@@ -193,12 +226,18 @@ class RestaurantController extends Controller
         $user = auth('sanctum')->user();
         $isAdmin = $user && $user->role === 'admin';
 
-        $filtered = $restaurants->filter(function ($restaurant) use ($user, $isAdmin) {
-            $isOwner = $user && $user->id === $restaurant->gerant_id;
-            if ($isAdmin || $isOwner) {
-                return true;
+        $filtered = $restaurants->filter(function ($restaurant) use ($user, $isAdmin, $request) {
+            // Si on demande spécifiquement les restaurants d'un gérant via manager_id, on autorise
+            // ce gérant (ou un admin) à voir ses propres restaurants même s'ils sont en attente ou suspendus.
+            if ($request->has('manager_id')) {
+                $isOwner = $user && $user->id === $restaurant->gerant_id;
+                if ($isAdmin || $isOwner) {
+                    return true;
+                }
             }
-            return $restaurant->est_valide && !$restaurant->estBloque();
+            
+            // Pour le feed public de la boutique ou les recherches, seuls les restaurants validés, non-bloqués et non archivés sont visibles.
+            return $restaurant->est_valide && !$restaurant->estBloque() && !$restaurant->est_archive;
         });
 
         $result = $filtered->values()->map(function ($restaurant) use ($user) {

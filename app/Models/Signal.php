@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 
-#[Fillable(['libelle', 'user_id', 'avis_id'])]
+#[Fillable(['libelle', 'user_id', 'avis_id', 'est_traite', 'decision'])]
 class Signal extends Model
 {
     use HasFactory;

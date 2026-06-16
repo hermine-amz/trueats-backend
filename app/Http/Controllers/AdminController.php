@@ -10,10 +10,8 @@ class AdminController extends Controller
 {
     public function demandes(Request $request)
     {
-        // Restaurants en attente de validation avec les infos du gérant
+        // Restaurants soumis avec les infos du gérant
         $demandes = Restaurant::with('gerant')
-            ->where('est_valide', false)
-            ->whereNull('bloque_jusqua')
             ->latest()
             ->get()
             ->map(function ($r) {
@@ -33,6 +31,8 @@ class AdminController extends Controller
                     'ifu_attestation_url'  => $r->ifu_attestation_url,
                     'rccm_numero'          => $r->rccm_numero,
                     'rccm_extrait_url'     => $r->rccm_extrait_url,
+                    'est_valide'           => $r->est_valide,
+                    'motif_rejet'          => $r->motif_rejet,
                     'gerant' => $r->gerant ? [
                         'id'     => $r->gerant->id,
                         'nom'    => $r->gerant->nom,
@@ -62,6 +62,19 @@ class AdminController extends Controller
             $gerant = User::find($restaurant->gerant_id);
             if ($gerant && $gerant->role === 'client') {
                 $gerant->update(['role' => 'gerant']);
+            }
+        }
+
+        if (!$validated['est_valide'] && $restaurant->gerant_id) {
+            $gerant = User::find($restaurant->gerant_id);
+            if ($gerant && $gerant->role === 'gerant') {
+                $hasOtherValides = Restaurant::where('gerant_id', $gerant->id)
+                    ->where('id', '!=', $restaurant->id)
+                    ->where('est_valide', true)
+                    ->exists();
+                if (!$hasOtherValides) {
+                    $gerant->update(['role' => 'client']);
+                }
             }
         }
 
@@ -188,13 +201,17 @@ class AdminController extends Controller
         ]);
 
         $signal = \App\Models\Signal::findOrFail($id);
+        
+        $decision = $validated['keep_review'] ? 'conserve' : 'retire';
+        $signal->update([
+            'est_traite' => true,
+            'decision' => $decision
+        ]);
 
-        if (!$validated['keep_review']) {
-            if ($signal->avis) {
-                $signal->avis->delete();
-            }
-        } else {
-            $signal->delete();
+        if ($signal->avis) {
+            $signal->avis->update([
+                'est_publie' => $validated['keep_review']
+            ]);
         }
 
         return response()->json([
