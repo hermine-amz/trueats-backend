@@ -21,11 +21,20 @@ class ExplorationController extends Controller
     {
         $restaurant = Restaurant::findOrFail($id);
 
-        $exploration = Exploration::firstOrCreate([
+        $exploration = Exploration::where('user_id', $request->user()->id)
+            ->where('restaurant_id', $restaurant->id)
+            ->first();
+
+        if ($exploration) {
+            $exploration->delete();
+            return response()->json(['message' => 'Removed from explorations.', 'is_explored' => false], 200);
+        }
+
+        $newExploration = Exploration::create([
             'user_id' => $request->user()->id,
             'restaurant_id' => $restaurant->id,
         ]);
 
-        return response()->json($exploration, 201);
+        return response()->json($newExploration, 201);
     }
 }
