@@ -75,11 +75,11 @@ class RestaurantController extends Controller
 
         $validated = $request->validate([
             'nom' => 'sometimes|string|max:255',
-            'telephone' => 'sometimes|nullable|string|max:50',
+            'telephone' => ['sometimes', 'nullable', 'string', 'regex:/^\+22901[0-9]{8}$/'],
             'horaires' => 'sometimes|nullable|string|max:255',
             'adresse' => 'sometimes|string|max:1000',
             'quartier' => 'sometimes|nullable|string|max:100',
-            'categorie' => 'sometimes|nullable|string|max:100',
+            'categorie' => ['sometimes', 'nullable', 'string', 'in:Maquis,Restaurant,Fast-food,Snack,Buvette,Café,Bar,Pâtisserie'],
             'type_cuisine' => 'sometimes|nullable|string|max:100',
             'latitude' => 'sometimes|numeric',
             'longitude' => 'sometimes|numeric',
@@ -94,7 +94,13 @@ class RestaurantController extends Controller
 
         if ($request->user()->role !== 'admin') {
             $nameChanged = isset($validated['nom']) && $validated['nom'] !== $restaurant->nom;
-            if ($nameChanged || (!$restaurant->est_valide && $restaurant->motif_rejet !== null)) {
+            $locationChanged = 
+                (isset($validated['adresse']) && $validated['adresse'] !== $restaurant->adresse) ||
+                (isset($validated['quartier']) && $validated['quartier'] !== $restaurant->quartier) ||
+                (isset($validated['latitude']) && (double)$validated['latitude'] !== (double)$restaurant->latitude) ||
+                (isset($validated['longitude']) && (double)$validated['longitude'] !== (double)$restaurant->longitude);
+
+            if ($nameChanged || $locationChanged || (!$restaurant->est_valide && $restaurant->motif_rejet !== null)) {
                 $validated['motif_rejet'] = null;
                 $validated['est_valide'] = false;
             }
@@ -130,11 +136,11 @@ class RestaurantController extends Controller
     {
         $validated = $request->validate([
             'nom'               => 'required|string|max:255',
-            'telephone'         => 'nullable|string|max:50',
+            'telephone'         => ['nullable', 'string', 'regex:/^\+22901[0-9]{8}$/'],
             'horaires'          => 'nullable|string|max:255',
             'adresse'           => 'required|string|max:1000',
             'quartier'          => 'nullable|string|max:100',
-            'categorie'         => 'nullable|string|max:100',
+            'categorie'         => ['nullable', 'string', 'in:Maquis,Restaurant,Fast-food,Snack,Buvette,Café,Bar,Pâtisserie'],
             'type_cuisine'      => 'nullable|string|max:100',
             'latitude'          => 'required|numeric',
             'longitude'         => 'required|numeric',

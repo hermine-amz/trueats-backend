@@ -38,11 +38,11 @@ class WebRestaurantTest extends TestCase
     {
         $restaurant = Restaurant::create([
             'nom' => 'Le Bistro Gourmet',
-            'telephone' => '+33140205050',
+            'telephone' => '+229014020505',
             'horaires' => '12h00 - 23h00',
-            'adresse' => '10 Rue de la Paix, 75002 Paris',
-            'latitude' => 48.8698,
-            'longitude' => 2.3312,
+            'adresse' => 'Avenue Steinmetz, Cotonou',
+            'latitude' => 6.3595,
+            'longitude' => 2.4190,
             'qr_code_identifier' => 'BISTRO_GOURMET_QR',
             'gerant_id' => $this->gerant->id,
             'superficie' => 120,
@@ -83,11 +83,11 @@ class WebRestaurantTest extends TestCase
     {
         Restaurant::create([
             'nom' => 'Le Bistro Gourmet',
-            'telephone' => '+33140205050',
+            'telephone' => '+229014020505',
             'horaires' => '12h00 - 23h00',
-            'adresse' => '10 Rue de la Paix, 75002 Paris',
-            'latitude' => 48.8698,
-            'longitude' => 2.3312,
+            'adresse' => 'Avenue Steinmetz, Cotonou',
+            'latitude' => 6.3595,
+            'longitude' => 2.4190,
             'qr_code_identifier' => 'BISTRO_GOURMET_QR',
             'gerant_id' => $this->gerant->id,
             'superficie' => 120,
@@ -107,11 +107,11 @@ class WebRestaurantTest extends TestCase
     {
         Restaurant::create([
             'nom' => 'Le Bistro Gourmet',
-            'telephone' => '+33140205050',
+            'telephone' => '+229014020505',
             'horaires' => '12h00 - 23h00',
-            'adresse' => '10 Rue de la Paix, 75002 Paris',
-            'latitude' => 48.8698,
-            'longitude' => 2.3312,
+            'adresse' => 'Avenue Steinmetz, Cotonou',
+            'latitude' => 6.3595,
+            'longitude' => 2.4190,
             'qr_code_identifier' => 'BISTRO_GOURMET_QR',
             'gerant_id' => $this->gerant->id,
             'superficie' => 120,
@@ -132,11 +132,11 @@ class WebRestaurantTest extends TestCase
     {
         Restaurant::create([
             'nom' => 'Le Bistro Gourmet',
-            'telephone' => '+33140205050',
+            'telephone' => '+229014020505',
             'horaires' => '12h00 - 23h00',
-            'adresse' => '10 Rue de la Paix, 75002 Paris',
-            'latitude' => 48.8698,
-            'longitude' => 2.3312,
+            'adresse' => 'Avenue Steinmetz, Cotonou',
+            'latitude' => 6.3595,
+            'longitude' => 2.4190,
             'qr_code_identifier' => 'BISTRO_GOURMET_QR',
             'gerant_id' => $this->gerant->id,
             'superficie' => 120,

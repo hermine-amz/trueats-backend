@@ -64,6 +64,27 @@ class DatabaseSeeder extends Seeder
             'sexe' => 'Féminin',
         ]);
 
+        $client2 = User::create([
+            'nom' => 'Gnon',
+            'prenom' => 'Marc',
+            'email' => 'client2@trueats.com',
+            'password' => Hash::make('password'),
+            'role' => 'client',
+            'compte_active' => true,
+            'sexe' => 'Masculin',
+        ]);
+
+        $client3 = User::create([
+            'nom' => 'Dohou',
+            'prenom' => 'Afi',
+            'email' => 'client3@trueats.com',
+            'password' => Hash::make('password'),
+            'role' => 'client',
+            'compte_active' => true,
+            'sexe' => 'Féminin',
+        ]);
+
+
         // Categories
         $pizzaCat = Category::create(['libelle' => 'Pizzas']);
         $burgerCat = Category::create(['libelle' => 'Burgers']);
@@ -77,11 +98,12 @@ class DatabaseSeeder extends Seeder
         // 1. Le Bistro Gourmet
         $restaurant = Restaurant::create([
             'nom' => 'Le Bistro Gourmet',
-            'telephone' => '+33140205050',
+            'telephone' => '+229014020505',
             'horaires' => '12h00 - 23h00',
-            'adresse' => '10 Rue de la Paix, 75002 Paris',
-            'latitude' => 48.8698,
-            'longitude' => 2.3312,
+            'adresse' => 'Avenue Steinmetz, Cotonou',
+            'quartier' => 'Zongo Ehuzu, Cotonou',
+            'latitude' => 6.3595,
+            'longitude' => 2.4190,
             'qr_code_identifier' => 'BISTRO_GOURMET_QR',
             'gerant_id' => $gerant->id,
             'superficie' => 120,
@@ -124,8 +146,8 @@ class DatabaseSeeder extends Seeder
             'note' => 5,
             'commentaire' => 'Excellente nourriture et service rapide. Je recommande vivement !',
             'date_visite' => now(),
-            'lat_client' => 48.8698,
-            'long_client' => 2.3312,
+            'lat_client' => 6.3595,
+            'long_client' => 2.4190,
             'est_publie' => true,
             'user_id' => $client->id,
             'restaurant_id' => $restaurant->id,
@@ -134,9 +156,10 @@ class DatabaseSeeder extends Seeder
         // 2. Chez Tanti
         $tanti = Restaurant::create([
             'nom' => 'Maquis Chez Tanti',
-            'telephone' => '+22997970102',
+            'telephone' => '+229019797010',
             'horaires' => '11h30 - 23h30',
             'adresse' => 'Rue 820, Haie-Vive, Cotonou',
+            'quartier' => 'Haie Vive, Cotonou',
             'latitude' => 6.35712,
             'longitude' => 2.40892,
             'qr_code_identifier' => 'trueats_restaurant_1',
@@ -201,9 +224,10 @@ class DatabaseSeeder extends Seeder
         // 3. Le Petit Bissap
         $bissap = Restaurant::create([
             'nom' => 'Le Petit Bissap',
-            'telephone' => '+22961610304',
+            'telephone' => '+229016161030',
             'horaires' => '08h00 - 18h00',
             'adresse' => 'Avenue Jean-Paul II, Cotonou',
+            'quartier' => 'Cadjehoun Gare, Cotonou',
             'latitude' => 6.35245,
             'longitude' => 2.39956,
             'qr_code_identifier' => 'trueats_restaurant_2',
@@ -257,9 +281,10 @@ class DatabaseSeeder extends Seeder
         // 4. Chez Marcel
         $marcel = Restaurant::create([
             'nom' => 'Chez Marcel',
-            'telephone' => '+22995950506',
+            'telephone' => '+229019595050',
             'horaires' => '12h00 - 15h00, 19h00 - 23h00',
             'adresse' => 'Zone Résidentielle, Cotonou',
+            'quartier' => 'Zongo Ehuzu, Cotonou',
             'latitude' => 6.36100,
             'longitude' => 2.42150,
             'qr_code_identifier' => 'trueats_restaurant_3',
@@ -297,8 +322,8 @@ class DatabaseSeeder extends Seeder
             'note' => 4,
             'commentaire' => 'Cadre très chaleureux et plats soignés. Une belle adresse gastronomique !',
             'date_visite' => now()->subDays(5),
-            'lat_client' => 48.8698,
-            'long_client' => 2.3312,
+            'lat_client' => 6.3595,
+            'long_client' => 2.4190,
             'est_publie' => true,
             'user_id' => $gerantTanti->id,
             'restaurant_id' => $restaurant->id,
@@ -308,8 +333,8 @@ class DatabaseSeeder extends Seeder
             'note' => 5,
             'commentaire' => 'Très bon rapport qualité-prix. Les ingrédients sont très frais et le service impeccable.',
             'date_visite' => now()->subDays(8),
-            'lat_client' => 48.8698,
-            'long_client' => 2.3312,
+            'lat_client' => 6.3595,
+            'long_client' => 2.4190,
             'est_publie' => true,
             'user_id' => $gerantBissap->id,
             'restaurant_id' => $restaurant->id,

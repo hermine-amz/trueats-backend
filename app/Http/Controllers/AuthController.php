@@ -20,7 +20,7 @@ class AuthController extends Controller
             'prenom' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
-            'telephone' => 'nullable|string|max:20',
+            'telephone' => ['nullable', 'string', 'regex:/^\+22901[0-9]{8}$/'],
             'sexe' => 'nullable|string|max:10',
             'role' => 'nullable|string|in:client',
         ]);

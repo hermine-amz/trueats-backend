@@ -53,9 +53,9 @@ class TrueatsApiTest extends TestCase
 
         $this->restaurant = Restaurant::create([
             'nom' => 'Le Bistro Gourmet',
-            'adresse' => '10 Rue de la Paix, 75002 Paris',
-            'latitude' => 48.8698,
-            'longitude' => 2.3312,
+            'adresse' => 'Avenue Steinmetz, Cotonou',
+            'latitude' => 6.3595,
+            'longitude' => 2.4190,
             'qr_code_identifier' => 'BISTRO_GOURMET_QR',
             'gerant_id' => $this->gerant->id,
             'est_valide' => true,
@@ -113,8 +113,8 @@ class TrueatsApiTest extends TestCase
         $this->actingAs($this->user);
 
         $response = $this->postJson("/api/restaurants/{$this->restaurant->id}/verify-gps", [
-            'latitude' => 48.8698,
-            'longitude' => 2.3312
+            'latitude' => 6.3595,
+            'longitude' => 2.4190
         ]);
 
         $response->assertStatus(200)
@@ -146,8 +146,8 @@ class TrueatsApiTest extends TestCase
             'restaurant_id' => $this->restaurant->id,
             'note' => 4,
             'commentaire' => 'Bon repas',
-            'latitude_client' => 48.8698,
-            'longitude_client' => 2.3312
+            'latitude_client' => 6.3595,
+            'longitude_client' => 2.4190
         ]);
 
         $response->assertStatus(201)
@@ -177,8 +177,8 @@ class TrueatsApiTest extends TestCase
             'note' => 5,
             'commentaire' => 'Test',
             'date_visite' => now(),
-            'lat_client' => 48.8698,
-            'long_client' => 2.3312,
+            'lat_client' => 6.3595,
+            'long_client' => 2.4190,
             'user_id' => $this->user->id,
             'restaurant_id' => $this->restaurant->id,
         ]);
@@ -262,6 +262,55 @@ class TrueatsApiTest extends TestCase
         $this->assertDatabaseMissing('users', [
             'id' => $this->user->id,
         ]);
+    }
+
+    public function test_user_profile_sensitive_updates()
+    {
+        $this->actingAs($this->user);
+
+        // 1. Try to update email without current password -> should fail
+        $response = $this->putJson('/api/user/profile', [
+            'email' => 'new.email@example.com',
+        ]);
+        $response->assertStatus(422);
+
+        // 2. Try to update email with incorrect current password -> should fail
+        $response = $this->putJson('/api/user/profile', [
+            'email' => 'new.email@example.com',
+            'current_password' => 'wrong_password',
+        ]);
+        $response->assertStatus(422);
+
+        // 3. Update email and telephone with correct current password -> should succeed
+        $response = $this->putJson('/api/user/profile', [
+            'email' => 'new.email@example.com',
+            'telephone' => '+2290199999999',
+            'current_password' => 'password', // set in setUp
+        ]);
+        $response->assertStatus(200)
+            ->assertJsonPath('user.email', 'new.email@example.com')
+            ->assertJsonPath('user.telephone', '+2290199999999');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $this->user->id,
+            'email' => 'new.email@example.com',
+            'telephone' => '+2290199999999',
+        ]);
+
+        // 4. Update password with correct current password -> should succeed
+        $response = $this->putJson('/api/user/profile', [
+            'password' => 'newpassword123',
+            'password_confirmation' => 'newpassword123',
+            'current_password' => 'password',
+        ]);
+        $response->assertStatus(200);
+
+        // 5. Try to login with new password -> should succeed
+        $response = $this->postJson('/api/login', [
+            'email' => 'new.email@example.com',
+            'password' => 'newpassword123',
+        ]);
+        $response->assertStatus(200);
     }
 
     public function test_manager_can_update_restaurant()
@@ -427,8 +476,8 @@ class TrueatsApiTest extends TestCase
             'restaurant_id' => $this->restaurant->id,
             'note' => 5,
             'commentaire' => 'Super',
-            'latitude_client' => 48.8698,
-            'longitude_client' => 2.3312
+            'latitude_client' => 6.3595,
+            'longitude_client' => 2.4190
         ]);
         $response->assertStatus(403);
 
@@ -593,8 +642,8 @@ class TrueatsApiTest extends TestCase
             'restaurant_id' => $this->restaurant->id,
             'note' => 4,
             'commentaire' => '<script>alert("hack")</script>Excellent repas <b>incroyable</b>!',
-            'latitude_client' => 48.8698,
-            'longitude_client' => 2.3312
+            'latitude_client' => 6.3595,
+            'longitude_client' => 2.4190
         ]);
 
         $response->assertStatus(201);
